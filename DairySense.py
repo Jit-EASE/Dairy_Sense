@@ -1,7 +1,7 @@
 # DairySense+ Prototype
-# Streamlit + Gemini + OpenAI API Joint Integration
+# Streamlit + Gemini 2.5 + OpenAI API Joint Integration
 # Author: Jit
-# Version: 1.2
+# Version: 2.0
 
 import streamlit as st
 import pandas as pd
@@ -30,7 +30,7 @@ st.set_page_config(page_title="DairySense+ AI", layout="wide")
 st.title("🐄 DairySense+ | AI-Augmented Dairy Farming Assistant")
 st.markdown(
     "Analyze dairy cow health and get AI-powered farm management recommendations "
-    "using **Google Gemini** for vision and **OpenAI** for reasoning."
+    "using **Google Gemini 2.5** for vision and **OpenAI** for reasoning."
 )
 
 # File uploader
@@ -44,18 +44,16 @@ feed_quality_score = st.slider("Feed Quality Score (1=Poor, 10=Excellent)", 1, 1
 market_price = st.slider("Market Milk Price (€/litre)", 0.25, 1.50, 0.85, 0.01)
 
 # --------------------
-# Gemini Image Analysis Function
+# Gemini 2.5 Image Analysis
 # --------------------
 def analyze_with_gemini(image_file):
     """
-    Sends image to Gemini API for analysis.
-    Returns structured text summary of detected health or feed quality issues.
+    Sends image to Gemini 2.5 API for analysis.
     """
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent"
+    url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent"
     headers = {"Content-Type": "application/json"}
     params = {"key": GEMINI_API_KEY}
 
-    # Read uploaded image file as bytes and convert to base64
     image_bytes = image_file.read()
     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
@@ -84,7 +82,6 @@ def analyze_with_gemini(image_file):
     response = requests.post(url, headers=headers, params=params, data=json.dumps(payload))
     data = response.json()
 
-    # Debug mode if Gemini fails
     if "candidates" not in data:
         st.error("⚠️ Gemini API returned no candidates. Showing raw response below for debugging.")
         st.code(json.dumps(data, indent=2))
@@ -93,7 +90,7 @@ def analyze_with_gemini(image_file):
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 # --------------------
-# OpenAI Reasoning Function
+# OpenAI Reasoning
 # --------------------
 def generate_openai_recommendations(gemini_analysis, milk_yield, cow_temp, feed_quality_score, market_price):
     """
@@ -124,12 +121,12 @@ def generate_openai_recommendations(gemini_analysis, milk_yield, cow_temp, feed_
     return completion.choices[0].message.content
 
 # --------------------
-# Main Logic
+# Main App Logic
 # --------------------
 if uploaded_img:
     st.image(uploaded_img, caption="Uploaded Image", use_container_width=True)
 
-    with st.spinner("Analyzing image with Gemini..."):
+    with st.spinner("Analyzing image with Gemini 2.5..."):
         gemini_result = analyze_with_gemini(uploaded_img)
     st.subheader("🔍 Gemini Image Analysis")
     st.code(gemini_result)
@@ -144,4 +141,4 @@ if uploaded_img:
 
 # Footer
 st.markdown("---")
-st.caption("Prototype: Gemini + OpenAI for Dairy Farming | Built by Jit")
+st.caption("Prototype: Gemini 2.5 + OpenAI for Dairy Farming | Built by Jit")
