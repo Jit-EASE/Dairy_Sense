@@ -1,7 +1,7 @@
 # DairySense+ Prototype
-# Streamlit + Gemini 2.5 + OpenAI API Joint Integration
+# Streamlit + Gemini 2.5 + OpenAI + OLS Forecasting (Plotly Interactive)
 # Author: Jit
-# Version: 2.0
+# Version: 2.6
 
 import streamlit as st
 import pandas as pd
@@ -10,9 +10,11 @@ import requests
 import json
 import os
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 from openai import OpenAI
 from PIL import Image
+import statsmodels.api as sm
+import plotly.graph_objects as go
 
 # --------------------
 # API Keys (Streamlit Secrets)
@@ -29,8 +31,8 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 st.set_page_config(page_title="DairySense+ AI", layout="wide")
 st.title("🐄 DairySense+ | AI-Augmented Dairy Farming Assistant")
 st.markdown(
-    "Analyze dairy cow health and get AI-powered farm management recommendations "
-    "using **Google Gemini 2.5** for vision and **OpenAI** for reasoning."
+    "Analyze dairy cow health, forecast milk yield, and get AI-powered farm recommendations "
+    "using **Google Gemini 2.5** for vision, **OLS econometrics** for forecasting, and **OpenAI** for reasoning."
 )
 
 # File uploader
@@ -47,9 +49,6 @@ market_price = st.slider("Market Milk Price (€/litre)", 0.25, 1.50, 0.85, 0.01
 # Gemini 2.5 Image Analysis
 # --------------------
 def analyze_with_gemini(image_file):
-    """
-    Sends image to Gemini 2.5 API for analysis.
-    """
     url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent"
     headers = {"Content-Type": "application/json"}
     params = {"key": GEMINI_API_KEY}
@@ -90,18 +89,68 @@ def analyze_with_gemini(image_file):
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 # --------------------
+# OLS Forecasting with Plotly
+# --------------------
+def ols_forecast_plotly(current_yield):
+    """
+    Generate synthetic past yield data and forecast 7 days ahead using OLS regression.
+    Returns forecast DataFrame and displays Plotly chart.
+    """
+    np.random.seed(42)
+    days = np.arange(1, 31)
+    yields = current_yield + np.sin(days/5) * 2 + np.random.normal(0, 0.5, len(days))
+
+    # Create DataFrame
+    df = pd.DataFrame({"day": days, "yield": yields})
+
+    # OLS regression
+    X = sm.add_constant(df["day"])
+    model = sm.OLS(df["yield"], X).fit()
+
+    # Forecast next 7 days
+    future_days = np.arange(31, 38)
+    X_future = sm.add_constant(future_days)
+    forecast = model.predict(X_future)
+
+    forecast_df = pd.DataFrame({"day": future_days, "forecast_yield": forecast})
+
+    # Plotly chart
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=df["day"], y=df["yield"], mode='lines+markers',
+        name="Historical Yield", line=dict(color='blue')
+    ))
+    fig.add_trace(go.Scatter(
+        x=forecast_df["day"], y=forecast_df["forecast_yield"], mode='lines+markers',
+        name="Forecast", line=dict(color='orange', dash='dash')
+    ))
+
+    fig.update_layout(
+        title="Milk Yield Forecast (OLS)",
+        xaxis_title="Day",
+        yaxis_title="Milk Yield (litres)",
+        template="plotly_white",
+        hovermode="x unified"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    return forecast_df
+
+# --------------------
 # OpenAI Reasoning
 # --------------------
-def generate_openai_recommendations(gemini_analysis, milk_yield, cow_temp, feed_quality_score, market_price):
-    """
-    Uses OpenAI to combine Gemini's analysis + farm data into actionable recommendations.
-    """
+def generate_openai_recommendations(gemini_analysis, forecast_df, milk_yield, cow_temp, feed_quality_score, market_price):
+    forecast_text = forecast_df.to_string(index=False)
     prompt = f"""
     You are an AI dairy farm advisor.
     Gemini analysis:
     {gemini_analysis}
 
-    Farm data:
+    Milk yield forecast for next 7 days (litres/day):
+    {forecast_text}
+
+    Current farm data:
     - Current milk yield: {milk_yield} L/day
     - Avg cow temperature: {cow_temp} °C
     - Feed quality score: {feed_quality_score}/10
@@ -110,7 +159,7 @@ def generate_openai_recommendations(gemini_analysis, milk_yield, cow_temp, feed_
     Tasks:
     1. Summarize herd health status.
     2. Give 3 actionable recommendations for the next 48 hours.
-    3. Forecast next week's milk yield using a simple OLS-like logic based on current trends.
+    3. Interpret the OLS forecast and comment on trends.
     4. Suggest policy/sustainability considerations for Irish dairy farmers.
     """
     completion = client.chat.completions.create(
@@ -132,13 +181,16 @@ if uploaded_img:
     st.code(gemini_result)
 
     if gemini_result != "No analysis available":
+        st.subheader("📈 OLS Milk Yield Forecast")
+        forecast_df = ols_forecast_plotly(milk_yield)
+
         with st.spinner("Generating recommendations with OpenAI..."):
             recommendations = generate_openai_recommendations(
-                gemini_result, milk_yield, cow_temp, feed_quality_score, market_price
+                gemini_result, forecast_df, milk_yield, cow_temp, feed_quality_score, market_price
             )
         st.subheader("💡 AI Recommendations")
         st.markdown(recommendations)
 
 # Footer
 st.markdown("---")
-st.caption("Prototype: Gemini 2.5 + OpenAI for Dairy Farming | Built by Jit")
+st.caption("Prototype: Gemini 2.5 + OLS Forecasting (Plotly) + OpenAI | Built by Jit")
