@@ -32,7 +32,7 @@ st.set_page_config(page_title="DairySense+ AI", layout="wide")
 st.title("DairySense+ | Smart Dairy Farming Assistant for Ireland")
 st.markdown(
     "Analyze dairy cow health, forecast milk yield, and get farm recommendations "
-    "Powered by Econometrics and AI"
+    "(Powered by Econometrics and AI)"
 )
 
 # File uploader
@@ -193,4 +193,4 @@ if uploaded_img:
 
 # Footer
 st.markdown("---")
-st.caption("Prototype: Multi-Modal AI & Econometrics | Built by Jit")
+st.caption("Prototype: Multi-Modal AI (Vision + Reasoning) & Econometrics | Built by Jit")
