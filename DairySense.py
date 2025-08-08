@@ -29,7 +29,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Streamlit UI
 # --------------------
 st.set_page_config(page_title="DairySense+ AI", layout="wide")
-st.title("DairySense+ | Smart Dairy Farming Assistant")
+st.title("DairySense+ | Smart Dairy Farming Assistant for Ireland")
 st.markdown(
     "Analyze dairy cow health, forecast milk yield, and get AI-powered farm recommendations "
     "using **Google Gemini 2.5** for vision, **OLS econometrics** for forecasting, and **OpenAI** for reasoning."
@@ -181,7 +181,7 @@ if uploaded_img:
     st.code(gemini_result)
 
     if gemini_result != "No analysis available":
-        st.subheader("OLS Milk Yield Forecast")
+        st.subheader("OLS Regression - Milk Yield Forecast")
         forecast_df = ols_forecast_plotly(milk_yield)
 
         with st.spinner("Generating recommendations..."):
