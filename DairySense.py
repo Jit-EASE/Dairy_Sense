@@ -31,8 +31,8 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 st.set_page_config(page_title="DairySense+ AI", layout="wide")
 st.title("DairySense+ | Smart Dairy Farming Assistant for Ireland")
 st.markdown(
-    "Analyze dairy cow health, forecast milk yield, and get AI-powered farm recommendations "
-    "using **Google Gemini 2.5** for vision, **OLS econometrics** for forecasting, and **OpenAI** for reasoning."
+    "Analyze dairy cow health, forecast milk yield, and get farm recommendations "
+    "Powered by Econometrics and AI"
 )
 
 # File uploader
