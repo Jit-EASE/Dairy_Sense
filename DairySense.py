@@ -1,7 +1,7 @@
 # DairySense+ Prototype
 # Streamlit + Gemini + OpenAI API Joint Integration
 # Author: Jit
-# Version: 1.0
+# Version: 1.1
 
 import streamlit as st
 import pandas as pd
@@ -9,12 +9,13 @@ import numpy as np
 import requests
 import json
 import os
+import base64
 from datetime import datetime
 from openai import OpenAI
 from PIL import Image
 
 # --------------------
-# API Keys (set these in Streamlit Cloud secrets)
+# API Keys (Streamlit Secrets)
 # --------------------
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -36,7 +37,7 @@ st.markdown(
 uploaded_img = st.file_uploader("Upload a cow or feed image", type=["jpg", "jpeg", "png"])
 
 # Synthetic IoT Data Inputs
-st.subheader("📡 Synthetic Barn Data (Demo)")
+st.subheader("📡 Simulated Barn Data - IoT Sensor")
 milk_yield = st.slider("Current Daily Milk Yield (litres)", 10, 40, 25)
 cow_temp = st.slider("Average Cow Temperature (°C)", 37.0, 40.0, 38.5, 0.1)
 feed_quality_score = st.slider("Feed Quality Score (1=Poor, 10=Excellent)", 1, 10, 8)
@@ -48,27 +49,31 @@ market_price = st.slider("Market Milk Price (€/litre)", 0.25, 1.50, 0.85, 0.01
 def analyze_with_gemini(image_file):
     """
     Sends image to Gemini API for analysis.
-    Returns a structured text summary of detected health or feed quality issues.
+    Returns structured text summary of detected health or feed quality issues.
     """
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent"
     headers = {"Content-Type": "application/json"}
     params = {"key": GEMINI_API_KEY}
 
-    # Convert image to base64
-    img = Image.open(image_file)
-    img.save("temp.jpg")
-    with open("temp.jpg", "rb") as f:
-        img_bytes = f.read()
+    # Read uploaded image file as bytes and convert to base64
+    image_bytes = image_file.read()
+    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
     payload = {
         "contents": [
             {
                 "parts": [
-                    {"text": "Analyze the image of the cow or feed. Detect any visible health issues, signs of disease, or feed quality problems. Provide concise structured JSON with 'condition', 'confidence', and 'notes'."},
+                    {
+                        "text": (
+                            "Analyze the image of the cow or feed. Detect any visible health issues, "
+                            "signs of disease, or feed quality problems. Provide concise structured JSON "
+                            "with 'condition', 'confidence', and 'notes'."
+                        )
+                    },
                     {
                         "inline_data": {
                             "mime_type": "image/jpeg",
-                            "data": img_bytes.decode("latin1")  # Avoid base64 in demo
+                            "data": image_base64
                         }
                     }
                 ]
@@ -117,7 +122,8 @@ def generate_openai_recommendations(gemini_analysis, milk_yield, cow_temp, feed_
 # Main Logic
 # --------------------
 if uploaded_img:
-    st.image(uploaded_img, caption="Uploaded Image", use_column_width=True)
+    st.image(uploaded_img, caption="Uploaded Image", use_container_width=True)
+
     with st.spinner("Analyzing image with Gemini..."):
         gemini_result = analyze_with_gemini(uploaded_img)
     st.subheader("🔍 Gemini Image Analysis")
@@ -127,7 +133,7 @@ if uploaded_img:
         recommendations = generate_openai_recommendations(
             gemini_result, milk_yield, cow_temp, feed_quality_score, market_price
         )
-    st.subheader("AI Recommendations")
+    st.subheader("💡 AI Recommendations")
     st.markdown(recommendations)
 
 # Footer
