@@ -1,7 +1,7 @@
 # DairySense+ Prototype
 # Streamlit + Gemini + OpenAI API Joint Integration
 # Author: Jit
-# Version: 1.1
+# Version: 1.2
 
 import streamlit as st
 import pandas as pd
@@ -37,7 +37,7 @@ st.markdown(
 uploaded_img = st.file_uploader("Upload a cow or feed image", type=["jpg", "jpeg", "png"])
 
 # Synthetic IoT Data Inputs
-st.subheader("📡 Simulated Barn Data - IoT Sensor")
+st.subheader("📡 Synthetic Barn Data (Demo)")
 milk_yield = st.slider("Current Daily Milk Yield (litres)", 10, 40, 25)
 cow_temp = st.slider("Average Cow Temperature (°C)", 37.0, 40.0, 38.5, 0.1)
 feed_quality_score = st.slider("Feed Quality Score (1=Poor, 10=Excellent)", 1, 10, 8)
@@ -82,10 +82,15 @@ def analyze_with_gemini(image_file):
     }
 
     response = requests.post(url, headers=headers, params=params, data=json.dumps(payload))
-    try:
-        return response.json()["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception as e:
-        return f"Gemini API error: {e}"
+    data = response.json()
+
+    # Debug mode if Gemini fails
+    if "candidates" not in data:
+        st.error("⚠️ Gemini API returned no candidates. Showing raw response below for debugging.")
+        st.code(json.dumps(data, indent=2))
+        return "No analysis available"
+
+    return data["candidates"][0]["content"]["parts"][0]["text"]
 
 # --------------------
 # OpenAI Reasoning Function
@@ -116,7 +121,7 @@ def generate_openai_recommendations(gemini_analysis, milk_yield, cow_temp, feed_
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2
     )
-    return completion.choices[0].message["content"]
+    return completion.choices[0].message.content
 
 # --------------------
 # Main Logic
@@ -129,12 +134,13 @@ if uploaded_img:
     st.subheader("🔍 Gemini Image Analysis")
     st.code(gemini_result)
 
-    with st.spinner("Generating recommendations with OpenAI..."):
-        recommendations = generate_openai_recommendations(
-            gemini_result, milk_yield, cow_temp, feed_quality_score, market_price
-        )
-    st.subheader("💡 AI Recommendations")
-    st.markdown(recommendations)
+    if gemini_result != "No analysis available":
+        with st.spinner("Generating recommendations with OpenAI..."):
+            recommendations = generate_openai_recommendations(
+                gemini_result, milk_yield, cow_temp, feed_quality_score, market_price
+            )
+        st.subheader("💡 AI Recommendations")
+        st.markdown(recommendations)
 
 # Footer
 st.markdown("---")
