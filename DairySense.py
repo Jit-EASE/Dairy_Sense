@@ -32,7 +32,7 @@ st.set_page_config(page_title="DairySense+ AI", layout="wide")
 st.title("DairySense+ | Smart Dairy Farming Assistant for Ireland")
 st.markdown(
     "Analyze Dairy Cow Health, Forecast Milk Yield, and get Farm Recommendations "
-    "(Powered by Econometrics and AI)"
+    "(Powered by Econometrics and Multi-Modal AI)"
 )
 
 # File uploader
