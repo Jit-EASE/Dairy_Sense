@@ -29,7 +29,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Streamlit UI
 # --------------------
 st.set_page_config(page_title="DairySense+ AI", layout="wide")
-st.title("🐄 DairySense+ | AI-Augmented Dairy Farming Assistant")
+st.title("DairySense+ | Smart Dairy Farming Assistant")
 st.markdown(
     "Analyze dairy cow health, forecast milk yield, and get AI-powered farm recommendations "
     "using **Google Gemini 2.5** for vision, **OLS econometrics** for forecasting, and **OpenAI** for reasoning."
@@ -39,7 +39,7 @@ st.markdown(
 uploaded_img = st.file_uploader("Upload a cow or feed image", type=["jpg", "jpeg", "png"])
 
 # Synthetic IoT Data Inputs
-st.subheader("📡 Synthetic Barn Data (Demo)")
+st.subheader("IoT Sensor based Barn Data")
 milk_yield = st.slider("Current Daily Milk Yield (litres)", 10, 40, 25)
 cow_temp = st.slider("Average Cow Temperature (°C)", 37.0, 40.0, 38.5, 0.1)
 feed_quality_score = st.slider("Feed Quality Score (1=Poor, 10=Excellent)", 1, 10, 8)
@@ -175,22 +175,22 @@ def generate_openai_recommendations(gemini_analysis, forecast_df, milk_yield, co
 if uploaded_img:
     st.image(uploaded_img, caption="Uploaded Image", use_container_width=True)
 
-    with st.spinner("Analyzing image with Gemini 2.5..."):
+    with st.spinner("Analyzing image..."):
         gemini_result = analyze_with_gemini(uploaded_img)
-    st.subheader("🔍 Gemini Image Analysis")
+    st.subheader("Image Analysis")
     st.code(gemini_result)
 
     if gemini_result != "No analysis available":
-        st.subheader("📈 OLS Milk Yield Forecast")
+        st.subheader("OLS Milk Yield Forecast")
         forecast_df = ols_forecast_plotly(milk_yield)
 
-        with st.spinner("Generating recommendations with OpenAI..."):
+        with st.spinner("Generating recommendations..."):
             recommendations = generate_openai_recommendations(
                 gemini_result, forecast_df, milk_yield, cow_temp, feed_quality_score, market_price
             )
-        st.subheader("💡 AI Recommendations")
+        st.subheader(" Recommendations")
         st.markdown(recommendations)
 
 # Footer
 st.markdown("---")
-st.caption("Prototype: Gemini 2.5 + OLS Forecasting (Plotly) + OpenAI | Built by Jit")
+st.caption("Prototype: Multi-Modal AI & Econometrics | Built by Jit")
